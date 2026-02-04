@@ -1,58 +1,58 @@
-# 模型额度管理功能
+# Model Quota Management Feature
 
-## 功能说明
+## Feature Overview
 
-新增了模型额度查看功能，可以在前端管理界面查看每个 Token 对应的模型剩余额度和重置时间。
+Added model quota viewing functionality that allows you to check the remaining quota and reset time for each model corresponding to a Token in the frontend management interface.
 
-## 实现方案
+## Implementation Plan
 
-### 数据存储
-- **accounts.json**: 保持简洁，只存储核心认证信息
-- **data/quotas.json**: 新建文件，专门存储额度信息（轻量级持久化）
-- **内存缓存**: 5分钟缓存，避免频繁请求API
-- **自动清理**: 每小时清理超过1小时未更新的数据
+### Data Storage
+- **accounts.json**: Kept simple, stores only core authentication information
+- **data/quotas.json**: New file specifically for storing quota information (lightweight persistence)
+- **Memory Cache**: 5-minute cache to avoid frequent API requests
+- **Auto Cleanup**: Hourly cleanup of data not updated for over 1 hour
 
-### 核心文件
+### Core Files
 
 1. **src/api/client.js**
-   - 新增 `getModelsWithQuotas(token)` 函数
-   - 从 API 响应中提取 `quotaInfo` 字段
-   - 返回简化的额度数据结构
+   - New `getModelsWithQuotas(token)` function
+   - Extract `quotaInfo` field from API response
+   - Return simplified quota data structure
 
-2. **src/auth/quota_manager.js** (新建)
-   - 额度缓存管理
-   - 文件持久化
-   - UTC 时间转北京时间
-   - 自动清理过期数据
+2. **src/auth/quota_manager.js** (New)
+   - Quota cache management
+   - File persistence
+   - UTC time to Beijing time conversion
+   - Auto cleanup of expired data
 
 3. **src/routes/admin.js**
-   - 新增 `GET /admin/tokens/:refreshToken/quotas` 接口
-   - 支持按需获取指定 Token 的额度信息
+   - New `GET /admin/tokens/:refreshToken/quotas` endpoint
+   - Support on-demand retrieval of quota information for specified Token
 
 4. **public/app.js**
-   - 新增 `toggleQuota()` 函数：展开/收起额度面板
-   - 新增 `loadQuota()` 函数：从API加载额度数据
-   - 新增 `renderQuota()` 函数：渲染进度条和额度信息
+   - New `toggleQuota()` function: expand/collapse quota panel
+   - New `loadQuota()` function: load quota data from API
+   - New `renderQuota()` function: render progress bars and quota information
 
 5. **public/style.css**
-   - 新增额度展示相关样式
-   - 进度条样式（支持颜色渐变：绿色>50%，黄色20-50%，红色<20%）
+   - New quota display related styles
+   - Progress bar styles (supports color gradient: green>50%, yellow 20-50%, red<20%)
 
-## 使用方法
+## Usage Instructions
 
-### 前端操作
+### Frontend Operations
 
-1. 登录管理界面
-2. 在 Token 卡片中点击 **"📊 查看额度"** 按钮
-3. 系统会自动加载该 Token 的所有模型额度信息
-4. 以进度条形式展示：
-   - 模型名称
-   - 剩余额度百分比（带颜色标识）
-   - 额度重置时间（北京时间）
+1. Login to the management interface
+2. Click the **"📊 View Quota"** button in the Token card
+3. The system will automatically load all model quota information for that Token
+4. Display in progress bar format:
+   - Model name
+   - Remaining quota percentage (with color coding)
+   - Quota reset time (Beijing time)
 
-### 数据格式
+### Data Format
 
-#### API 响应示例
+#### API Response Example
 ```json
 {
   "success": true,
@@ -74,7 +74,7 @@
 }
 ```
 
-#### quotas.json 存储格式
+#### quotas.json Storage Format
 ```json
 {
   "meta": {
@@ -95,28 +95,28 @@
 }
 ```
 
-## 特性
+## Features
 
-✅ **按需加载**: 只在用户点击时才获取额度信息  
-✅ **智能缓存**: 5分钟内重复查看使用缓存，减少API请求  
-✅ **自动清理**: 定期清理过期数据，保持文件轻量  
-✅ **可视化展示**: 进度条直观显示剩余额度  
-✅ **颜色标识**: 绿色(>50%)、黄色(20-50%)、红色(<20%)  
-✅ **时间转换**: 自动将UTC时间转换为北京时间  
-✅ **轻量存储**: 使用字段缩写，只存储有变化的模型  
+✅ **On-Demand Loading**: Fetch quota information only when user clicks  
+✅ **Smart Caching**: Use cache for repeated views within 5 minutes, reducing API requests  
+✅ **Auto Cleanup**: Regularly clean up expired data to keep files lightweight  
+✅ **Visual Display**: Progress bars intuitively show remaining quota  
+✅ **Color Coding**: Green (>50%), Yellow (20-50%), Red (<20%)  
+✅ **Time Conversion**: Auto-convert UTC time to Beijing time  
+✅ **Lightweight Storage**: Use field abbreviations, store only changed models  
 
-## 注意事项
+## Notes
 
-1. 首次查看额度时需要调用 Google API，可能需要几秒钟
-2. 额度信息会缓存5分钟，如需最新数据请等待缓存过期后重新查看
-3. quotas.json 文件会自动创建，无需手动配置
-4. 如果 Token 过期或无效，会显示错误提示
+1. First quota view requires calling Google API, may take a few seconds
+2. Quota information is cached for 5 minutes; wait for cache expiration to view latest data
+3. quotas.json file is created automatically, no manual configuration needed
+4. Expired or invalid Tokens will display error messages
 
-## 测试
+## Testing
 
-启动服务后：
+After starting the service:
 ```bash
 npm start
 ```
 
-访问管理界面，点击任意 Token 的"查看额度"按钮即可测试功能。
+Access the management interface and click the "View Quota" button on any Token to test the feature.
