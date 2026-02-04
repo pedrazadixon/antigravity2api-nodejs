@@ -1,6 +1,6 @@
-// 日志管理模块
+// Log management module
 
-// 日志状态
+// Log state
 let logsState = {
     logs: [],
     total: 0,
@@ -8,17 +8,17 @@ let logsState = {
     searchKeyword: '',
     offset: 0,
     limit: 100,
-    maxLogs: 500, // 最大保留日志条数，防止内存无限增长
+    maxLogs: 500, // Maximum number of logs to keep, prevent unlimited memory growth
     autoRefresh: false,
     autoRefreshTimer: null,
     stats: { total: 0, info: 0, warn: 0, error: 0, request: 0, debug: 0 },
-    // WebSocket 相关
+    // WebSocket related
     ws: null,
     wsConnected: false,
     wsReconnectTimer: null
 };
 
-// 加载日志
+// Load logs
 async function loadLogs(append = false) {
     try {
         if (!append) {
@@ -37,7 +37,7 @@ async function loadLogs(append = false) {
         });
 
         if (!response.ok) {
-            throw new Error('获取日志失败');
+            throw new Error('Failed to get logs');
         }
 
         const data = await response.json();
@@ -48,7 +48,7 @@ async function loadLogs(append = false) {
                 logsState.logs = data.data.logs;
             }
 
-            // 限制日志数量，防止内存无限增长
+            // Limit log count to prevent unlimited memory growth
             if (logsState.logs.length > logsState.maxLogs) {
                 logsState.logs = logsState.logs.slice(-logsState.maxLogs);
             }
@@ -57,12 +57,12 @@ async function loadLogs(append = false) {
             renderLogs();
         }
     } catch (error) {
-        console.error('加载日志失败:', error);
-        showToast('加载日志失败: ' + error.message, 'error');
+        console.error('Failed to load logs:', error);
+        showToast('Failed to load logs: ' + error.message, 'error');
     }
 }
 
-// 加载日志统计
+// Load log statistics
 async function loadLogStats() {
     try {
         const response = await fetch('/admin/logs/stats', {
@@ -70,7 +70,7 @@ async function loadLogStats() {
         });
 
         if (!response.ok) {
-            throw new Error('获取日志统计失败');
+            throw new Error('Failed to get log statistics');
         }
 
         const data = await response.json();
@@ -79,13 +79,13 @@ async function loadLogStats() {
             renderLogStats();
         }
     } catch (error) {
-        console.error('加载日志统计失败:', error);
+        console.error('Failed to load log statistics:', error);
     }
 }
 
-// 清空日志
+// Clear logs
 async function clearLogs() {
-    if (!confirm('确定要清空所有日志吗？此操作不可恢复。')) {
+    if (!confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
         return;
     }
 
@@ -97,60 +97,60 @@ async function clearLogs() {
 
         const data = await response.json();
         if (data.success) {
-            showToast('日志已清空', 'success');
+            showToast('Logs cleared', 'success');
             logsState.logs = [];
             logsState.total = 0;
             logsState.stats = { total: 0, info: 0, warn: 0, error: 0, request: 0, debug: 0 };
             renderLogs();
             renderLogStats();
         } else {
-            showToast(data.message || '清空日志失败', 'error');
+            showToast(data.message || 'Failed to clear logs', 'error');
         }
     } catch (error) {
-        console.error('清空日志失败:', error);
-        showToast('清空日志失败: ' + error.message, 'error');
+        console.error('Failed to clear logs:', error);
+        showToast('Failed to clear logs: ' + error.message, 'error');
     }
 }
 
-// 筛选日志级别
+// Filter log level
 function filterLogLevel(level) {
     logsState.currentLevel = level;
     logsState.offset = 0;
 
-    // 更新统计项的激活状态
+    // Update active state of statistics items
     renderLogStats();
 
     loadLogs();
 }
 
-// 搜索日志
+// Search logs
 function searchLogs(keyword) {
     logsState.searchKeyword = keyword;
     logsState.offset = 0;
     loadLogs();
 }
 
-// 加载更多日志
+// Load more logs
 function loadMoreLogs() {
     logsState.offset += logsState.limit;
     loadLogs(true);
 }
 
-// 切换自动刷新
+// Toggle auto refresh
 function toggleAutoRefresh() {
     logsState.autoRefresh = !logsState.autoRefresh;
     const btn = document.getElementById('autoRefreshBtn');
 
     if (logsState.autoRefresh) {
         btn.classList.add('active');
-        btn.innerHTML = '⏸️ 停止刷新';
+        btn.innerHTML = '⏸️ Stop Refresh';
         logsState.autoRefreshTimer = setInterval(() => {
             loadLogs();
             loadLogStats();
         }, 3000);
     } else {
         btn.classList.remove('active');
-        btn.innerHTML = '🔄 自动刷新';
+        btn.innerHTML = '🔄 Auto Refresh';
         if (logsState.autoRefreshTimer) {
             clearInterval(logsState.autoRefreshTimer);
             logsState.autoRefreshTimer = null;
@@ -158,7 +158,7 @@ function toggleAutoRefresh() {
     }
 }
 
-// 渲染日志统计
+// Render log statistics
 function renderLogStats() {
     const statsContainer = document.getElementById('logStats');
     if (!statsContainer) return;
@@ -193,19 +193,19 @@ function renderLogStats() {
     `;
 }
 
-// 判断是否为分隔符行（只包含重复的特殊字符）
+// Check if line is a separator (only contains repeated special characters)
 function isSeparatorLine(message) {
     if (!message || typeof message !== 'string') return false;
-    // 去掉首尾空格后，判断是否只由重复的 = ─ ═ - * 等符号组成
+    // After trimming whitespace, check if it only consists of repeated = ─ ═ - * symbols
     const trimmed = message.trim();
     if (trimmed.length < 3) return false;
-    // 匹配只包含分隔符字符的行
+    // Match lines containing only separator characters
     return /^[═─=\-*_~]+$/.test(trimmed);
 }
 
-// 复制日志内容
+// Copy log content
 function copyLogContent(index, buttonElement) {
-    // 从排序后的日志中获取原始消息
+    // Get original message from sorted logs
     const filteredLogs = logsState.logs.filter(log => !isSeparatorLine(log.message));
     const sortedLogs = [...filteredLogs].reverse();
     const log = sortedLogs[index];
@@ -218,7 +218,7 @@ function copyLogContent(index, buttonElement) {
     const plainText = log.message;
 
     navigator.clipboard.writeText(plainText).then(() => {
-        // 显示复制成功反馈
+        // Show copy success feedback
         if (buttonElement) {
             const originalText = buttonElement.innerHTML;
             buttonElement.innerHTML = '✓';
@@ -235,26 +235,26 @@ function copyLogContent(index, buttonElement) {
     });
 }
 
-// 渲染日志列表
+// Render log list
 function renderLogs() {
     const container = document.getElementById('logList');
     if (!container) return;
 
-    // 过滤掉分隔符行
+    // Filter out separator lines
     const filteredLogs = logsState.logs.filter(log => !isSeparatorLine(log.message));
 
     if (filteredLogs.length === 0) {
         container.innerHTML = `
             <div class="log-empty">
                 <div class="log-empty-icon">📋</div>
-                <div class="log-empty-text">暂无日志</div>
+                <div class="log-empty-text">No logs</div>
             </div>
         `;
         return;
     }
 
-    // 日志按时间正序显示（旧的在上面，新的在下面）
-    // logsState.logs 已经是倒序的（最新在前），需要反转
+    // Display logs in chronological order (oldest on top, newest on bottom)
+    // logsState.logs is already in reverse order (newest first), need to reverse
     const sortedLogs = [...filteredLogs].reverse();
 
     const logsHtml = sortedLogs.map((log, index) => {
@@ -277,7 +277,7 @@ function renderLogs() {
             second: '2-digit'
         });
 
-        // 高亮搜索关键词
+        // Highlight search keywords
         let message = escapeHtml(log.message);
         if (logsState.searchKeyword) {
             const regex = new RegExp(`(${escapeRegExp(logsState.searchKeyword)})`, 'gi');
@@ -301,34 +301,34 @@ function renderLogs() {
 
     container.innerHTML = logsHtml;
 
-    // 滚动到底部（显示最新日志）
+    // Scroll to bottom (show latest logs)
     container.scrollTop = container.scrollHeight;
 
-    // 更新加载更多按钮状态
+    // Update load more button state
     const loadMoreBtn = document.getElementById('loadMoreLogsBtn');
     if (loadMoreBtn) {
         const hasMore = logsState.logs.length < logsState.total;
         loadMoreBtn.style.display = hasMore ? 'block' : 'none';
-        loadMoreBtn.textContent = `加载更多 (${logsState.logs.length}/${logsState.total})`;
+        loadMoreBtn.textContent = `Load More (${logsState.logs.length}/${logsState.total})`;
     }
 }
 
-// HTML 转义
+// HTML escape
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-// 正则转义
+// RegExp escape
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// 导出日志
+// Export logs
 function exportLogs() {
     if (logsState.logs.length === 0) {
-        showToast('没有日志可导出', 'warning');
+        showToast('No logs to export', 'warning');
         return;
     }
 
@@ -347,13 +347,13 @@ function exportLogs() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showToast('日志已导出', 'success');
+    showToast('Logs exported', 'success');
 }
 
-// 连接 WebSocket
+// Connect WebSocket
 function connectLogWebSocket() {
     if (logsState.ws && logsState.ws.readyState === WebSocket.OPEN) {
-        return; // 已连接
+        return; // Already connected
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -364,7 +364,7 @@ function connectLogWebSocket() {
 
         logsState.ws.onopen = () => {
             logsState.wsConnected = true;
-            console.log('WebSocket 日志连接已建立');
+            console.log('WebSocket log connection established');
             updateWsStatus(true);
         };
 
@@ -373,15 +373,15 @@ function connectLogWebSocket() {
                 const data = JSON.parse(event.data);
                 handleWsMessage(data);
             } catch (e) {
-                console.error('解析 WebSocket 消息失败:', e);
+                console.error('Failed to parse WebSocket message:', e);
             }
         };
 
         logsState.ws.onclose = () => {
             logsState.wsConnected = false;
-            console.log('WebSocket 日志连接已断开');
+            console.log('WebSocket log connection closed');
             updateWsStatus(false);
-            // 5秒后重连
+            // Reconnect after 5 seconds
             if (!logsState.wsReconnectTimer) {
                 logsState.wsReconnectTimer = setTimeout(() => {
                     logsState.wsReconnectTimer = null;
@@ -391,37 +391,37 @@ function connectLogWebSocket() {
         };
 
         logsState.ws.onerror = (error) => {
-            console.error('WebSocket 错误:', error);
+            console.error('WebSocket error:', error);
             logsState.wsConnected = false;
             updateWsStatus(false);
-            // 回退到 HTTP 加载
+            // Fallback to HTTP loading
             loadLogs();
         };
     } catch (e) {
-        console.error('创建 WebSocket 失败:', e);
-        // 回退到 HTTP 加载
+        console.error('Failed to create WebSocket:', e);
+        // Fallback to HTTP loading
         loadLogs();
     }
 }
 
-// 处理 WebSocket 消息
+// Handle WebSocket messages
 function handleWsMessage(data) {
     switch (data.type) {
         case 'history':
-            // 接收历史日志
-            logsState.logs = data.logs.reverse(); // 转为最新在前
+            // Receive historical logs
+            logsState.logs = data.logs.reverse(); // Convert to newest first
             logsState.total = data.logs.length;
             updateStats();
             renderLogs();
             break;
 
         case 'log':
-            // 接收新日志
+            // Receive new log
             addNewLog(data.log);
             break;
 
         case 'clear':
-            // 日志被清空
+            // Logs have been cleared
             logsState.logs = [];
             logsState.total = 0;
             logsState.stats = { total: 0, info: 0, warn: 0, error: 0, request: 0, debug: 0 };
@@ -431,18 +431,18 @@ function handleWsMessage(data) {
     }
 }
 
-// 添加新日志
+// Add new log
 function addNewLog(log) {
-    // 插入到开头（最新的在前）
+    // Insert at the beginning (newest first)
     logsState.logs.unshift(log);
     logsState.total++;
 
-    // 限制数量
+    // Limit quantity
     if (logsState.logs.length > logsState.maxLogs) {
         logsState.logs.pop();
     }
 
-    // 更新统计
+    // Update statistics
     if (!isSeparatorLine(log.message)) {
         logsState.stats.total++;
         if (logsState.stats[log.level] !== undefined) {
@@ -451,25 +451,25 @@ function addNewLog(log) {
         renderLogStats();
     }
 
-    // 检查是否匹配当前筛选条件
+    // Check if it matches current filter criteria
     if (logsState.currentLevel !== 'all' && log.level !== logsState.currentLevel) {
-        return; // 不匹配筛选条件，不添加到显示
+        return; // Doesn't match filter criteria, don't add to display
     }
 
     if (logsState.searchKeyword && !log.message.toLowerCase().includes(logsState.searchKeyword.toLowerCase())) {
-        return; // 不匹配搜索关键词
+        return; // Doesn't match search keyword
     }
 
-    // 追加到 DOM
+    // Append to DOM
     appendLogToDOM(log);
 }
 
-// 追加单条日志到 DOM（增量渲染）
+// Append single log to DOM (incremental rendering)
 function appendLogToDOM(log) {
     const container = document.getElementById('logList');
     if (!container) return;
 
-    // 检查是否有空状态提示，移除它
+    // Check if there's an empty state message, remove it
     const emptyState = container.querySelector('.log-empty');
     if (emptyState) {
         emptyState.remove();
@@ -511,14 +511,14 @@ function appendLogToDOM(log) {
         <div class="log-message">${message}</div>
     `;
 
-    // 追加到底部
+    // Append to bottom
     container.appendChild(logElement);
 
-    // 滚动到底部
+    // Scroll to bottom
     container.scrollTop = container.scrollHeight;
 }
 
-// 更新统计
+// Update statistics
 function updateStats() {
     const stats = { total: 0, info: 0, warn: 0, error: 0, request: 0, debug: 0 };
     for (const log of logsState.logs) {
@@ -532,7 +532,7 @@ function updateStats() {
     renderLogStats();
 }
 
-// 更新 WebSocket 连接状态显示
+// Update WebSocket connection status display
 function updateWsStatus(connected) {
     const btn = document.getElementById('autoRefreshBtn');
     if (btn) {
@@ -548,7 +548,7 @@ function updateWsStatus(connected) {
     }
 }
 
-// 断开 WebSocket
+// Disconnect WebSocket
 function disconnectLogWebSocket() {
     if (logsState.wsReconnectTimer) {
         clearTimeout(logsState.wsReconnectTimer);
@@ -562,17 +562,17 @@ function disconnectLogWebSocket() {
     logsState.wsConnected = false;
 }
 
-// 初始化日志页面
+// Initialize logs page
 function initLogsPage() {
-    // 优先使用 WebSocket 实时推送
+    // Prioritize using WebSocket real-time push
     connectLogWebSocket();
-    // 加载统计（始终需要）
+    // Load statistics (always needed)
     loadLogStats();
 }
 
-// 清理日志页面（切换离开时）
+// Cleanup logs page (when switching away)
 function cleanupLogsPage() {
-    // 断开 WebSocket
+    // Disconnect WebSocket
     disconnectLogWebSocket();
 
     if (logsState.autoRefreshTimer) {
@@ -581,12 +581,12 @@ function cleanupLogsPage() {
     }
     logsState.autoRefresh = false;
 
-    // 清空日志数据释放内存
+    // Clear log data to free memory
     logsState.logs = [];
     logsState.total = 0;
     logsState.offset = 0;
 
-    // 清空 DOM 内容
+    // Clear DOM content
     const container = document.getElementById('logList');
     if (container) {
         container.innerHTML = '';
