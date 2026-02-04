@@ -1,4 +1,4 @@
-// HTML 转义函数 - 防止 XSS 注入
+// HTML escape function - prevent XSS injection
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -9,7 +9,7 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// 转义用于 JavaScript 字符串的内容
+// Escape content for JavaScript strings
 function escapeJs(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -20,7 +20,7 @@ function escapeJs(str) {
         .replace(/\r/g, '\\r');
 }
 
-// 字体大小设置
+// Font size settings
 function initFontSize() {
     const savedSize = localStorage.getItem('fontSize') || '18';
     document.documentElement.style.setProperty('--font-size-base', savedSize + 'px');
@@ -41,7 +41,7 @@ function updateFontSizeInputs(size) {
     if (numberInput) numberInput.value = size;
 }
 
-// 敏感信息隐藏功能
+// Sensitive information hiding functionality
 let sensitiveInfoHidden = localStorage.getItem('sensitiveInfoHidden') !== 'false';
 
 function initSensitiveInfo() {
@@ -60,13 +60,13 @@ function updateSensitiveBtn() {
     const btn = document.getElementById('toggleSensitiveBtn');
     if (btn) {
         if (sensitiveInfoHidden) {
-            btn.innerHTML = '🙈 隐藏';
-            btn.title = '点击显示敏感信息';
+            btn.innerHTML = '🙈 Hidden';
+            btn.title = 'Click to show sensitive information';
             btn.classList.remove('btn-info');
             btn.classList.add('btn-secondary');
         } else {
-            btn.innerHTML = '👁️ 显示';
-            btn.title = '点击隐藏敏感信息';
+            btn.innerHTML = '👁️ Show';
+            btn.title = 'Click to hide sensitive information';
             btn.classList.remove('btn-secondary');
             btn.classList.add('btn-info');
         }
@@ -74,7 +74,7 @@ function updateSensitiveBtn() {
 }
 
 function updateSensitiveInfoDisplay() {
-    // 隐藏/显示包含敏感信息的整行
+    // Hide/show entire rows containing sensitive information
     document.querySelectorAll('.sensitive-row').forEach(row => {
         if (sensitiveInfoHidden) {
             row.style.display = 'none';
@@ -82,7 +82,7 @@ function updateSensitiveInfoDisplay() {
             row.style.display = '';
         }
     });
-    // 同时隐藏/显示 token-info 容器
+    // Also hide/show token-info container
     document.querySelectorAll('.token-info').forEach(container => {
         if (sensitiveInfoHidden) {
             container.style.display = 'none';

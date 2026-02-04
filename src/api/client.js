@@ -30,39 +30,39 @@ import { parseGeminiCandidateParts, toOpenAIUsage } from './geminiResponseParser
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// 请求客户端：优先使用 FingerprintRequester，失败则自动降级到 axios
+// Request client: prioritize FingerprintRequester, auto fallback to axios on failure
 let requester = null;
 let useAxios = false;
 
-// 初始化请求客户端
+// Initialize request client
 if (config.useNativeAxios === true) {
   useAxios = true;
-  logger.info('使用原生 axios 请求');
+  logger.info('Using native axios requests');
 } else {
   try {
-    // 使用 src/bin/config.json 作为 TLS 指纹配置文件
-    // 检测是否在 pkg 环境中
+    // Use src/bin/config.json as TLS fingerprint configuration file
+    // Detect if in pkg environment
     const isPkg = typeof process.pkg !== 'undefined';
 
-    // 根据环境选择配置文件路径
+    // Select config file path based on environment
     const configPath = isPkg
-  ? path.join(path.dirname(process.execPath), 'bin', 'tls_config.json')  // pkg 打包环境
-  : path.join(__dirname, '..', 'bin', 'tls_config.json');  // 开发环境
+  ? path.join(path.dirname(process.execPath), 'bin', 'tls_config.json')  // pkg packaging environment
+  : path.join(__dirname, '..', 'bin', 'tls_config.json');  // development environment
     requester = fingerprintRequester.create({
       configPath,
       timeout: config.timeout ? Math.ceil(config.timeout / 1000) : 30,
       proxy: config.proxy || null,
     });
-    logger.info('使用 FingerprintRequester 请求');
+    logger.info('Using FingerprintRequester for requests');
   } catch (error) {
-    logger.warn('FingerprintRequester 初始化失败，自动降级使用 axios:', error.message);
+    logger.warn('FingerprintRequester initialization failed, auto fallback to axios:', error.message);
     useAxios = true;
   }
 }
 
-// ==================== 调试：最终请求/原始响应完整输出（单文件追加模式） ====================
+// ==================== Debug: final request/raw response complete output (single file append mode) ====================
 
-// ==================== 模型列表缓存（智能管理） ====================
+// ==================== Model list cache (intelligent management) ====================
 const getModelCacheTTL = () => {
   return config.cache?.modelListTTL || MODEL_LIST_CACHE_TTL;
 };
@@ -70,8 +70,8 @@ const getModelCacheTTL = () => {
 let modelListCache = null;
 let modelListCacheTime = 0;
 
-// 默认模型列表（当 API 请求失败时使用）
-// 使用 Object.freeze 防止意外修改，并帮助 V8 优化
+// Default model list (used when API request fails)
+// Use Object.freeze to prevent accidental modification and help V8 optimization
 const DEFAULT_MODELS = Object.freeze([
   'claude-opus-4-5',
   'claude-opus-4-5-thinking',
@@ -92,7 +92,7 @@ const DEFAULT_MODELS = Object.freeze([
   'chat_23310'
 ]);
 
-// 生成默认模型列表响应
+// Generate default model list response
 function getDefaultModelList() {
   const created = Math.floor(Date.now() / 1000);
   return {
@@ -107,12 +107,12 @@ function getDefaultModelList() {
 }
 
 
-// 注册对象池与模型缓存的内存清理回调
+// Register memory cleanup callback for object pool and model cache
 function registerMemoryCleanup() {
-  // 由流式解析模块管理自身对象池大小
+  // Managed by stream parsing module for its own object pool size
   registerStreamMemoryCleanup();
 
-  // 统一由内存清理器定时触发：仅清理“已过期”的模型列表缓存
+  // Uniformly triggered by memory cleaner periodically: only clean 'expired' model list cache
   memoryManager.registerCleanup(() => {
     const ttl = getModelCacheTTL();
     const now = Date.now();
@@ -123,10 +123,10 @@ function registerMemoryCleanup() {
   });
 }
 
-// 初始化时注册清理回调
+// Register cleanup callback at initialization
 registerMemoryCleanup();
 
-// ==================== 辅助函数 ====================
+// ==================== Helper functions ====================
 
 function buildHeaders(token) {
   return {
@@ -150,7 +150,7 @@ function buildRequesterConfig(headers, body = null) {
 }
 
 
-// 统一错误处理
+// Unified error handling
 async function handleApiError(error, token, dumpId = null) {
   const status = getUpstreamStatus(error);
   const errorBody = await readUpstreamErrorBody(error);
@@ -161,17 +161,17 @@ async function handleApiError(error, token, dumpId = null) {
   
   if (status === 403) {
     if (isCallerDoesNotHavePermission(errorBody)) {
-      throw createApiError(`超出模型最大上下文。错误详情: ${errorBody}`, status, errorBody);
+      throw createApiError(`Exceeded model maximum context. Error details: ${errorBody}`, status, errorBody);
     }
     tokenManager.disableCurrentToken(token);
-    throw createApiError(`该账号没有使用权限，已自动禁用。错误详情: ${errorBody}`, status, errorBody);
+    throw createApiError(`This account does not have usage permission, has been automatically disabled. Error details: ${errorBody}`, status, errorBody);
   }
   
-  throw createApiError(`API请求失败 (${status}): ${errorBody}`, status, errorBody);
+  throw createApiError(`API request failed (${status}): ${errorBody}`, status, errorBody);
 }
 
 
-// ==================== 导出函数 ====================
+// ==================== Export functions ====================
 
 export async function generateAssistantResponse(requestBody, token, callback) {
   
@@ -182,7 +182,7 @@ export async function generateAssistantResponse(requestBody, token, callback) {
     await dumpFinalRequest(dumpId, requestBody);
   }
 
-  // 在 state 中临时缓存思维链签名，供流式多片段复用，并携带 session 与 model 信息以写入全局缓存
+  // Temporarily cache reasoning chain signature in state for reuse across stream segments, and carry session and model information to write to global cache
   const state = {
     toolCalls: [],
     reasoningSignature: null,
@@ -213,7 +213,7 @@ export async function generateAssistantResponse(requestBody, token, callback) {
       });
     }
 
-    // 流式响应结束后，以 JSON 格式写入日志
+    // After stream response ends, write log in JSON format
     if (dumpId) {
       await dumpStreamResponse(dumpId, streamCollector);
     }
@@ -223,7 +223,7 @@ export async function generateAssistantResponse(requestBody, token, callback) {
   }
 }
 
-// 内部工具：从远端拉取完整模型原始数据
+// Internal tool: fetch complete raw model data from remote
 async function fetchRawModels(headers, token) {
   try {
     if (useAxios) {
@@ -256,15 +256,15 @@ export async function getAvailableModels() {
   
   const token = await tokenManager.getToken();
   if (!token) {
-    // 没有 token 时返回默认模型列表
-    logger.warn('没有可用的 token，返回默认模型列表');
+    // Return default model list when no token available
+    logger.warn('No available token, returning default model list');
     return getDefaultModelList();
   }
   
   const headers = buildHeaders(token);
   const data = await fetchRawModels(headers, token);
   if (!data) {
-    // fetchRawModels 里已经做了统一错误处理，这里兜底为默认列表
+    // fetchRawModels already did unified error handling, fallback to default list here
     return getDefaultModelList();
   }
 
@@ -276,7 +276,7 @@ export async function getAvailableModels() {
     owned_by: 'google'
   }));
   
-  // 添加默认模型（如果 API 返回的列表中没有）
+  // Add default models (if not in the list returned by API)
   const existingIds = new Set(modelList.map(m => m.id));
   for (const defaultModel of DEFAULT_MODELS) {
     if (!existingIds.has(defaultModel)) {
@@ -294,20 +294,20 @@ export async function getAvailableModels() {
     data: modelList
   };
   
-  // 更新缓存
+  // Update cache
   modelListCache = result;
   modelListCacheTime = now;
   const currentTTL = getModelCacheTTL();
-  logger.info(`模型列表已缓存 (有效期: ${currentTTL / 1000}秒, 模型数量: ${modelList.length})`);
+  logger.info(`Model list cached (TTL: ${currentTTL / 1000}s, model count: ${modelList.length})`,);
   
   return result;
 }
 
-// 清除模型列表缓存（可用于手动刷新）
+// Clear model list cache (can be used for manual refresh)
 export function clearModelListCache() {
   modelListCache = null;
   modelListCacheTime = 0;
-  logger.info('模型列表缓存已清除');
+  logger.info('Model list cache cleared');
 }
 
 export async function getModelsWithQuotas(token) {
@@ -362,18 +362,18 @@ export async function generateAssistantResponseNoStream(requestBody, token) {
 
   const usageData = toOpenAIUsage(data.response?.usageMetadata);
   
-  // 将新的签名和思考内容写入全局缓存（按 model），供后续请求兜底使用
+  // Write new signature and thinking content to global cache (by model) for fallback in subsequent requests
   const sessionId = requestBody.request?.sessionId;
   const model = requestBody.model;
   const hasTools = parsed.toolCalls.length > 0;
   const isImage = isImageModel(model);
   
-  // 判断是否应该缓存签名
+  // Determine if signature should be cached
   if (sessionId && model && shouldCacheSignature({ hasTools, isImageModel: isImage })) {
-    // 获取最终使用的签名（优先使用工具签名，回退到思维签名）
+    // Get the final signature to use (prioritize tool signature, fallback to reasoning signature)
     let finalSignature = parsed.reasoningSignature;
     
-    // 工具签名：取最后一个带 thoughtSignature 的工具作为缓存源（更接近"最新"）
+    // Tool signature: use the last tool with thoughtSignature as cache source (closer to 'latest')
     if (hasTools) {
       for (let i = parsed.toolCalls.length - 1; i >= 0; i--) {
         const sig = parsed.toolCalls[i]?.thoughtSignature;
@@ -390,7 +390,7 @@ export async function generateAssistantResponseNoStream(requestBody, token) {
     }
   }
 
-  // 生图模型：转换为 markdown 格式
+  // Image generation model: convert to markdown format
   if (parsed.imageUrls.length > 0) {
     let markdown = parsed.content ? parsed.content + '\n\n' : '';
     markdown += parsed.imageUrls.map(url => `![image](${url})`).join('\n\n');

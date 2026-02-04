@@ -168,27 +168,27 @@ function renderLogStats() {
     statsContainer.innerHTML = `
         <div class="log-stat-item clickable ${currentLevel === 'all' ? 'active' : ''}" onclick="filterLogLevel('all')">
             <span class="log-stat-num">${logsState.stats.total}</span>
-            <span class="log-stat-label">全部</span>
+            <span class="log-stat-label">All</span>
         </div>
         <div class="log-stat-item info clickable ${currentLevel === 'info' ? 'active' : ''}" onclick="filterLogLevel('info')">
             <span class="log-stat-num">${logsState.stats.info}</span>
-            <span class="log-stat-label">信息</span>
+            <span class="log-stat-label">Information</span>
         </div>
         <div class="log-stat-item debug clickable ${currentLevel === 'debug' ? 'active' : ''}" onclick="filterLogLevel('debug')">
             <span class="log-stat-num">${logsState.stats.debug}</span>
-            <span class="log-stat-label">调试</span>
+            <span class="log-stat-label">Debug</span>
         </div>
         <div class="log-stat-item warn clickable ${currentLevel === 'warn' ? 'active' : ''}" onclick="filterLogLevel('warn')">
             <span class="log-stat-num">${logsState.stats.warn}</span>
-            <span class="log-stat-label">警告</span>
+            <span class="log-stat-label">Warning</span>
         </div>
         <div class="log-stat-item error clickable ${currentLevel === 'error' ? 'active' : ''}" onclick="filterLogLevel('error')">
             <span class="log-stat-num">${logsState.stats.error}</span>
-            <span class="log-stat-label">错误</span>
+            <span class="log-stat-label">Error</span>
         </div>
         <div class="log-stat-item request clickable ${currentLevel === 'request' ? 'active' : ''}" onclick="filterLogLevel('request')">
             <span class="log-stat-num">${logsState.stats.request}</span>
-            <span class="log-stat-label">请求</span>
+            <span class="log-stat-label">Request</span>
         </div>
     `;
 }
@@ -211,7 +211,7 @@ function copyLogContent(index, buttonElement) {
     const log = sortedLogs[index];
 
     if (!log) {
-        showToast('复制失败：日志不存在', 'error');
+        showToast('Copy failed: log does not exist', 'error');
         return;
     }
 
@@ -228,10 +228,10 @@ function copyLogContent(index, buttonElement) {
                 buttonElement.classList.remove('copied');
             }, 1500);
         }
-        showToast('已复制到剪贴板', 'success');
+        showToast('Copied to clipboard', 'success');
     }).catch(err => {
-        console.error('复制失败:', err);
-        showToast('复制失败', 'error');
+        console.error('Copy failed:', err);
+        showToast('Copy failed', 'error');
     });
 }
 
@@ -290,7 +290,7 @@ function renderLogs() {
                     <span class="log-level-icon">${levelIcon}</span>
                     <span class="log-level-tag ${levelClass}">${log.level.toUpperCase()}</span>
                     <span class="log-time">${time}</span>
-                    <button class="log-copy-btn" onclick="copyLogContent(${index}, this)" title="复制日志内容">
+                    <button class="log-copy-btn" onclick="copyLogContent(${index}, this)" title="Copy log content">
                         📋
                     </button>
                 </div>
@@ -537,11 +537,11 @@ function updateWsStatus(connected) {
     const btn = document.getElementById('autoRefreshBtn');
     if (btn) {
         if (connected) {
-            btn.innerHTML = '🟢 实时推送中';
+            btn.innerHTML = '🟢 Real-time push notifications';
             btn.classList.add('active');
             btn.disabled = true;
         } else {
-            btn.innerHTML = '🔴 已断开';
+            btn.innerHTML = '🔴 Disconnected';
             btn.classList.remove('active');
             btn.disabled = false;
         }
